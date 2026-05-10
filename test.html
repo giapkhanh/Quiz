@@ -67,7 +67,8 @@
 </div>
 
 <script>
-    // --- CẤU HÌNH FIREBASE CỦA KHÁNH ---
+    <script>
+    // --- 1. CẤU HÌNH FIREBASE CỦA KHÁNH (GIỮ NGUYÊN KEY CỦA BẠN) ---
     const firebaseConfig = {
         apiKey: "AIzaSyA2sLis1g7Dsylip0oWLJDiEBLrfxWd4j4",
         authDomain: "quiz-kma.firebaseapp.com",
@@ -77,10 +78,11 @@
         messagingSenderId: "1034690091115",
         appId: "1:1034690091115:web:10a56070042a92cd52f92e"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // DỮ LIỆU 20 CÂU HỎI
+    // --- 2. DỮ LIỆU CÂU HỎI ---
     const questions = [
         {q: "Nhà nước nước CHXHCN Việt Nam là nhà nước pháp quyền XHCN của ai?", a: ["Của giai cấp công nhân", "Của nhân dân, do nhân dân, vì nhân dân", "Của liên minh công - nông - trí thức", "Của Đảng Cộng sản Việt Nam"], c: 1},
         {q: "Nhân dân thực hiện quyền lực nhà nước bằng các hình thức nào?", a: ["Chỉ thông qua dân chủ trực tiếp", "Chỉ thông qua dân chủ đại diện", "Thông qua dân chủ trực tiếp và dân chủ đại diện", "Thông qua các cuộc mít tinh, biểu tình"], c: 2},
@@ -143,41 +145,42 @@
         document.getElementById('screen-quiz').style.display = 'none';
         document.getElementById('screen-result').style.display = 'block';
         document.getElementById('final-score').innerText = `${score}/${questions.length}`;
+        // Gửi điểm lên với tên biến 'ts' khớp với Database của Khánh
         db.ref('leaderboard').push({ name: pName, score: score, ts: Date.now() });
     }
 
     function listenRank() {
-    // Không giới hạn 10 nữa, lấy thoải mái dữ liệu
-    db.ref('leaderboard').on('value', (snap) => {
-        let data = [];
-        snap.forEach(child => {
-            data.push(child.val());
+        db.ref('leaderboard').on('value', (snap) => {
+            let arr = [];
+            snap.forEach(c => {
+                let val = c.val();
+                if(val && val.name) arr.push(val);
+            });
+            
+            // Sắp xếp an toàn: Điểm cao trước, thời gian trước
+            arr.sort((a, b) => (b.score || 0) - (a.score || 0) || (a.ts || 0) - (b.ts || 0));
+            
+            // Lấy 70 bạn
+            const top70 = arr.slice(0, 70);
+            
+            const html = top70.map((x, i) => `
+                <div class="rank-item" style="${x.name === pName ? 'border: 2px solid var(--p); background: #eff6ff;' : ''}">
+                    <span>${i+1}. ${x.name}</span>
+                    <span style="font-weight:bold; color:var(--p)">${x.score}/20</span>
+                </div>`).join('');
+            
+            const listDiv = document.getElementById('rank-list');
+            if(listDiv) listDiv.innerHTML = html || "Chưa có ai tham gia.";
+        }, (error) => {
+            console.error("Lỗi Firebase:", error);
+            document.getElementById('rank-list').innerHTML = "Lỗi kết nối Database.";
         });
+    }
 
-        // Sắp xếp: Điểm cao lên đầu, bằng điểm thì ai xong trước lên đầu
-        data.sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.ts - b.ts; 
-        });
-
-        // Lấy Top 70 (hoặc bỏ .slice luôn để lấy hết cả lớp)
-        const top70 = data.slice(0, 70);
-
-        // Hiển thị tổng số bạn đã tham gia để lớp trưởng biết
-        const totalParticipants = data.length;
-        
-        const html = top70.map((x, i) => `
-            <div class="rank-item" style="${x.name === playerName ? 'border: 2px solid var(--p); background: #eff6ff;' : ''}">
-                <span style="font-size: 0.9rem;">${i + 1}. ${x.name}</span>
-                <span style="font-weight:bold; color:var(--p)">${x.score}/20</span>
-            </div>`).join('');
-        
-        // Thêm một dòng nhỏ báo tổng số người chơi bên trên danh sách
-        const headerHtml = `<p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Tổng cộng: ${totalParticipants} bạn đã làm bài</p>`;
-        
-        document.getElementById('rank-list').innerHTML = headerHtml + html;
-    });
-}
+    // Nếu người dùng vào thẳng trang kết quả, vẫn gọi listenRank để hiện bảng
+    if(document.getElementById('screen-result').style.display !== 'none') {
+        listenRank();
+    }
 </script>
 </body>
 </html>
