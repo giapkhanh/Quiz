@@ -21,6 +21,15 @@
         #leaderboard { margin-top: 25px; border-top: 2px solid #f1f5f9; padding-top: 20px; }
         .rank-item { display: flex; justify-content: space-between; padding: 10px; border-radius: 8px; margin-bottom: 5px; background: #fff; border: 1px solid #eee; }
         .rank-item:first-child { background: #fef3c7; border-color: #f59e0b; }
+        #rank-list {
+            max-height: 400px; /* Chiều cao cố định của bảng */
+            overflow-y: auto;  /* Hiện thanh cuộn khi danh sách quá dài */
+            padding-right: 5px;
+        }
+        
+        /* Làm thanh cuộn nhìn đẹp hơn (tùy chọn) */
+        #rank-list::-webkit-scrollbar { width: 5px; }
+        #rank-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -138,17 +147,37 @@
     }
 
     function listenRank() {
-        db.ref('leaderboard').orderByChild('score').limitToLast(10).on('value', (snap) => {
-            let arr = [];
-            snap.forEach(c => arr.push(c.val()));
-            arr.sort((a,b) => b.score - a.score || b.ts - a.ts);
-            document.getElementById('rank-list').innerHTML = arr.map((x, i) => `
-                <div class="rank-item">
-                    <span>${i+1}. ${x.name}</span>
-                    <span style="font-weight:bold; color:var(--p)">${x.score}/${questions.length}</span>
-                </div>`).join('');
+    // Không giới hạn 10 nữa, lấy thoải mái dữ liệu
+    db.ref('leaderboard').on('value', (snap) => {
+        let data = [];
+        snap.forEach(child => {
+            data.push(child.val());
         });
-    }
+
+        // Sắp xếp: Điểm cao lên đầu, bằng điểm thì ai xong trước lên đầu
+        data.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.ts - b.ts; 
+        });
+
+        // Lấy Top 70 (hoặc bỏ .slice luôn để lấy hết cả lớp)
+        const top70 = data.slice(0, 70);
+
+        // Hiển thị tổng số bạn đã tham gia để lớp trưởng biết
+        const totalParticipants = data.length;
+        
+        const html = top70.map((x, i) => `
+            <div class="rank-item" style="${x.name === playerName ? 'border: 2px solid var(--p); background: #eff6ff;' : ''}">
+                <span style="font-size: 0.9rem;">${i + 1}. ${x.name}</span>
+                <span style="font-weight:bold; color:var(--p)">${x.score}/20</span>
+            </div>`).join('');
+        
+        // Thêm một dòng nhỏ báo tổng số người chơi bên trên danh sách
+        const headerHtml = `<p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Tổng cộng: ${totalParticipants} bạn đã làm bài</p>`;
+        
+        document.getElementById('rank-list').innerHTML = headerHtml + html;
+    });
+}
 </script>
 </body>
 </html>
