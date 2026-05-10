@@ -1,0 +1,148 @@
+<div id="kma-quiz-app" style="max-width: 700px; margin: 20px auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; border: 1px solid #ddd; border-radius: 12px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px;">
+    
+<div id="setup-screen" style="text-align: center;">
+<h1 style="color: #2c3e50; font-size: 24px;">ÔN THI PHÁP LUẬT ĐẠI CƯƠNG</h1>
+<p style="color: #7f8c8d;">Chủ đề: Nguyên tắc tổ chức bộ máy Nhà nước CHXHCN VN</p>
+
+<button onclick="startQuiz()" style="background: #3498db; color: white; border: none; padding: 12px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; transition: 0.3s;">Bắt đầu làm bài</button>
+</div>
+
+<div id="quiz-screen" style="display: none;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <span id="progress" style="font-weight: bold; color: #3498db;">Câu 1/20</span>
+    <span id="score-display" style="color: #27ae60;">Đúng: 0</span>
+</div>
+
+<div id="question-text" style="font-size: 18px; font-weight: 600; margin-bottom: 20px; min-height: 60px;"></div>
+
+<div id="options-container" style="display: grid; gap: 10px;">
+    <!-- Options go here -->
+</div>
+
+<div id="feedback" style="margin-top: 20px; padding: 10px; border-radius: 5px; display: none;"></div>
+
+<button id="next-btn" onclick="nextQuestion()" style="margin-top: 25px; width: 100%; background: #2ecc71; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 5px; cursor: pointer; display: none;">Câu tiếp theo</button>
+</div>
+
+<div id="result-screen" style="display: none; text-align: center;">
+<h2 style="color: #2c3e50;">KẾT QUẢ</h2>
+<div id="final-score" style="font-size: 48px; font-weight: bold; margin: 20px 0; color: #e67e22;"></div>
+<p id="result-message"></p>
+<button onclick="resetQuiz()" style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 20px;">Làm lại từ đầu</button>
+</div>
+</div>
+
+<script>
+const quizData = [
+    { q: "Theo Hiến pháp 2013, Nhà nước nước CHXHCN Việt Nam là nhà nước pháp quyền XHCN của ai?", a: ["Của giai cấp công nhân", "Của nhân dân, do nhân dân, vì nhân dân", "Của liên minh công - nông - trí thức", "Của Đảng Cộng sản Việt Nam"], c: 1 },
+    { q: "Nhân dân thực hiện quyền lực nhà nước bằng các hình thức nào?", a: ["Chỉ thông qua dân chủ trực tiếp", "Chỉ thông qua dân chủ đại diện", "Thông qua dân chủ trực tiếp và dân chủ đại diện", "Thông qua các cuộc mít tinh, biểu tình"], c: 2 },
+    { q: "Nguyên tắc nào là nguyên tắc tổ chức và hoạt động cơ bản nhất của bộ máy nhà nước Việt Nam?", a: ["Quyền lực nhà nước là phân chia tuyệt đối", "Tập trung dân chủ", "Đa nguyên, đa đảng", "Tam quyền phân lập"], c: 1 },
+    { q: "Quyền lực nhà nước ở Việt Nam được thực hiện theo nguyên tắc nào giữa các cơ quan lập pháp, hành pháp và tư pháp?", a: ["Độc lập hoàn toàn", "Thống nhất, có sự phân công, phối hợp và kiểm soát", "Tập trung tuyệt đối vào Chính phủ", "Đối lập và kiềm chế lẫn nhau"], c: 1 },
+    { q: "Lực lượng nào lãnh đạo Nhà nước và xã hội Việt Nam theo Điều 4 Hiến pháp 2013?", a: ["Quốc hội", "Mặt trận Tổ quốc Việt Nam", "Đảng Cộng sản Việt Nam", "Quân đội nhân dân"], c: 2 },
+    { q: "Cơ quan nào có quyền lập hiến và lập pháp tại Việt Nam?", a: ["Chính phủ", "Quốc hội", "Tòa án nhân dân tối cao", "Chủ tịch nước"], c: 1 },
+    { q: "Quốc hội là cơ quan có tính chất gì?", a: ["Cơ quan hành chính cao nhất", "Cơ quan xét xử cao nhất", "Cơ quan quyền lực nhà nước cao nhất", "Cơ quan kiểm sát cao nhất"], c: 2 },
+    { q: "Cơ quan nào thực hiện quyền hành pháp và là cơ quan hành chính nhà nước cao nhất?", a: ["Quốc hội", "Ủy ban nhân dân", "Chính phủ", "Viện kiểm sát nhân dân"], c: 2 },
+    { q: "Người đứng đầu Nhà nước, thay mặt nước CHXHCN Việt Nam về đối nội và đối ngoại là ai?", a: ["Tổng Bí thư", "Thủ tướng Chính phủ", "Chủ tịch nước", "Chủ tịch Quốc hội"], c: 2 },
+    { q: "Cơ quan nào thực hiện quyền tư pháp và xét xử tại Việt Nam?", a: ["Viện kiểm sát nhân dân", "Công an nhân dân", "Tòa án nhân dân", "Hội đồng nhân dân"], c: 2 },
+    { q: "Chức năng của Viện kiểm sát nhân dân là gì?", a: ["Xét xử các vụ án hình sự", "Thực hành quyền công tố và kiểm sát hoạt động tư pháp", "Quản lý hành chính nhà nước", "Ban hành văn bản luật"], c: 1 },
+    { q: "Hội đồng nhân dân là cơ quan quyền lực nhà nước ở đâu?", a: ["Ở trung ương", "Ở địa phương", "Trong quân đội", "Trong các tổ chức chính trị"], c: 1 },
+    { q: "Cơ quan nào là cơ quan chấp hành của Hội đồng nhân dân và là cơ quan hành chính ở địa phương?", a: ["Tòa án nhân dân địa phương", "Ủy ban nhân dân", "Công an tỉnh/thành phố", "Mặt trận Tổ quốc địa phương"], c: 1 },
+    { q: "Việc bầu cử đại biểu Quốc hội và HĐND được tiến hành theo các nguyên tắc nào?", a: ["Tự nguyện, bình đẳng, trực tiếp", "Phổ thông, bình đẳng, trực tiếp và bỏ phiếu kín", "Công khai, dân chủ, phổ thông", "Chỉ định, hiệp thương, bỏ phiếu kín"], c: 1 },
+    { q: "Nguyên tắc 'Pháp chế xã hội chủ nghĩa' đòi hỏi mọi tổ chức và cá nhân phải làm gì?", a: ["Tuân theo ý chí cá nhân người lãnh đạo", "Tuân thủ Hiến pháp và pháp luật", "Làm mọi việc để đạt mục tiêu kinh tế", "Chỉ tuân theo luật của ngành mình"], c: 1 },
+    { q: "Nhiệm kỳ của mỗi khóa Quốc hội là bao nhiêu năm?", a: ["4 năm", "5 năm", "6 năm", "3 năm"], c: 1 },
+    { q: "Cơ quan nào là cơ quan thường trực của Quốc hội, có thẩm quyền giải thích Hiến pháp và luật?", a: ["Hội đồng Dân tộc", "Ủy ban Thường vụ Quốc hội", "Chính phủ", "Tòa án nhân dân tối cao"], c: 1 },
+    { q: "Việc điều chỉnh địa giới đơn vị hành chính cấp tỉnh thuộc thẩm quyền của ai?", a: ["Chính phủ", "Chủ tịch nước", "Quốc hội", "Bộ Nội vụ"], c: 2 },
+    { q: "Trong quá trình xét xử, Thẩm phán và Hội thẩm nhân dân tuân theo nguyên tắc nào?", a: ["Tuân theo chỉ đạo của Chánh án cấp trên", "Độc lập và chỉ tuân theo pháp luật", "Phải xin ý kiến của UBND cùng cấp", "Tuân theo sự phối hợp với Viện kiểm sát"], c: 1 },
+    { q: "Theo Hiến pháp 2013, ai là người giữ chức vụ Thống lĩnh lực lượng vũ trang nhân dân Việt Nam?", a: ["Tổng Bí thư", "Bộ trưởng Bộ Quốc phòng", "Chủ tịch nước", "Thủ tướng Chính phủ"], c: 2 }
+];
+
+let currentIdx = 0;
+let score = 0;
+let canClick = true;
+
+function startQuiz() {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'block';
+    loadQuestion();
+}
+
+function loadQuestion() {
+    canClick = true;
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('progress').innerText = `Câu ${currentIdx + 1}/${quizData.length}`;
+    
+    const q = quizData[currentIdx];
+    document.getElementById('question-text').innerText = q.q;
+    
+    const optionsContainer = document.getElementById('options-container');
+    optionsContainer.innerHTML = '';
+    
+    q.a.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.innerText = String.fromCharCode(65 + i) + '. ' + opt;
+        btn.style.cssText = "padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; text-align: left; font-size: 15px; transition: 0.2s;";
+        btn.onmouseover = () => { if(canClick) btn.style.background = '#f0f0f0'; };
+        btn.onmouseout = () => { if(canClick) btn.style.background = '#fff'; };
+        btn.onclick = () => selectOption(i, btn);
+        optionsContainer.appendChild(btn);
+    });
+}
+
+function selectOption(idx, btn) {
+    if (!canClick) return;
+    canClick = false;
+    
+    const correctIdx = quizData[currentIdx].c;
+    const feedback = document.getElementById('feedback');
+    feedback.style.display = 'block';
+    
+    if (idx === correctIdx) {
+        score++;
+        btn.style.background = '#d4edda';
+        btn.style.borderColor = '#28a745';
+        feedback.innerText = "Chính xác! ✅";
+        feedback.style.color = "#155724";
+        feedback.style.background = "#d4edda";
+    } else {
+        btn.style.background = '#f8d7da';
+        btn.style.borderColor = '#dc3545';
+        feedback.innerText = `Sai rồi. Đáp án đúng là: ${String.fromCharCode(65 + correctIdx)}`;
+        feedback.style.color = "#721c24";
+        feedback.style.background = "#f8d7da";
+    }
+    
+    document.getElementById('score-display').innerText = `Đúng: ${score}`;
+    document.getElementById('next-btn').style.display = 'block';
+}
+
+function nextQuestion() {
+    currentIdx++;
+    if (currentIdx < quizData.length) {
+        loadQuestion();
+    } else {
+        showResult();
+    }
+}
+
+function showResult() {
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+    const percent = (score / quizData.length) * 10;
+    document.getElementById('final-score').innerText = `${score}/${quizData.length}`;
+    
+    let msg = "";
+    if (percent >= 8) msg = "Quá giỏi! KMA-er chính hiệu đây rồi! 😎";
+    else if (percent >= 5) msg = "Đủ điểm qua môn rồi, nhưng ôn thêm tí nữa cho chắc nhé! 👍";
+    else msg = "Cần ôn tập kỹ hơn rồi bạn ơi! Cố lên! 💪";
+    document.getElementById('result-message').innerText = msg;
+}
+
+function resetQuiz() {
+    currentIdx = 0;
+    score = 0;
+    document.getElementById('score-display').innerText = `Đúng: 0`;
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('setup-screen').style.display = 'block';
+}
+</script>
