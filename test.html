@@ -4,71 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KMA Super Quiz Challenge</title>
-    <!-- Firebase SDK (Version Compat để chạy trực tiếp trên HTML) -->
+    <!-- Firebase SDK (Version Compat giúp nhúng thẳng vào HTML) -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
         :root { --p: #2563eb; --s: #22c55e; --e: #ef4444; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
         #app { background: white; max-width: 500px; width: 100%; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
-        h1 { font-size: 1.4rem; text-align: center; color: #1e293b; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
+        h1 { font-size: 1.4rem; text-align: center; color: #1e293b; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; margin-bottom: 10px; }
         .btn-blue { background: var(--p); color: white; }
-        .option-btn { background: white; border: 1px solid #e2e8f0; text-align: left; font-weight: normal; }
-        .correct { background: #dcfce7 !important; border-color: var(--s) !important; color: #166534; }
-        .wrong { background: #fee2e2 !important; border-color: var(--e) !important; color: #991b1b; }
-        #leaderboard { margin-top: 25px; border-top: 2px solid #f1f5f9; padding-top: 20px; }
-        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-radius: 8px; margin-bottom: 5px; background: #fff; border: 1px solid #eee; }
-        .rank-item:first-child { background: #fef3c7; border-color: #f59e0b; }
-        #rank-list {
-            max-height: 400px; /* Chiều cao cố định của bảng */
-            overflow-y: auto;  /* Hiện thanh cuộn khi danh sách quá dài */
-            padding-right: 5px;
-        }
+        .btn-blue:hover { background: #1d4ed8; }
         
-        /* Làm thanh cuộn nhìn đẹp hơn (tùy chọn) */
+        .option-btn { background: white; border: 1px solid #e2e8f0; text-align: left; font-weight: normal; }
+        .option-btn:hover { background: #f1f5f9; border-color: var(--p); }
+        .correct { background: #dcfce7 !important; border-color: var(--s) !important; color: #166534; font-weight: bold; }
+        .wrong { background: #fee2e2 !important; border-color: var(--e) !important; color: #991b1b; }
+        
+        /* BẢNG XẾP HẠNG CÓ THANH CUỘN CHO 70 NGƯỜI */
+        #leaderboard { margin-top: 25px; border-top: 2px solid #f1f5f9; padding-top: 20px; }
+        #rank-list { max-height: 400px; overflow-y: auto; padding-right: 5px; }
         #rank-list::-webkit-scrollbar { width: 5px; }
         #rank-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-radius: 8px; margin-bottom: 5px; background: #fff; border: 1px solid #eee; align-items: center; font-size: 0.95rem; }
+        .rank-item:first-child { background: #fef3c7; border-color: #f59e0b; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <!-- Màn hình nhập tên -->
+    <!-- MÀN HÌNH 1: NHẬP TÊN -->
     <div id="screen-start">
         <h1>🏆 KMA QUIZ CHALLENGE</h1>
-        <p style="text-align: center; color: #64748b;">Chào Khánh! Nhập tên để bắt đầu đua top nhé.</p>
-        <input type="text" id="nameInput" placeholder="Họ tên hoặc Nickname..." maxlength="20">
+        <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Chào Khánh! Nhập tên để bắt đầu đua top với lớp mình nhé.</p>
+        <input type="text" id="nameInput" placeholder="Nhập Họ tên của bạn..." maxlength="25">
         <button class="btn-blue" onclick="start()">BẮT ĐẦU THI</button>
     </div>
 
-    <!-- Màn hình câu hỏi -->
+    <!-- MÀN HÌNH 2: CÂU HỎI -->
     <div id="screen-quiz" style="display:none;">
         <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--p); margin-bottom: 15px;">
             <span id="progress"></span> <span id="score-now">Đúng: 0</span>
         </div>
-        <div id="question" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px;"></div>
+        <div id="question" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; min-height: 50px;"></div>
         <div id="options"></div>
     </div>
 
-    <!-- Màn hình kết quả -->
+    <!-- MÀN HÌNH 3: KẾT QUẢ & BXH -->
     <div id="screen-result" style="display:none;">
-        <h1 style="color: var(--s);">Hoàn thành! 🥳</h1>
-        <p style="text-align: center;">Điểm của bạn:</p>
-        <div id="final-score" style="text-align: center; font-size: 3.5rem; font-weight: 800; color: var(--p); margin: 10px 0;"></div>
+        <h1 style="color: var(--s);">Hoàn thành rực rỡ! 🥳</h1>
+        <p style="text-align: center; margin-bottom: 5px;">Điểm của bạn:</p>
+        <div id="final-score" style="text-align: center; font-size: 3.5rem; font-weight: 800; color: var(--p); margin-bottom: 15px;"></div>
         
         <div id="leaderboard">
-            <h3 style="text-align: center;">📊 BẢNG XẾP HẠNG REALTIME</h3>
-            <div id="rank-list">Đang tải...</div>
-            <button style="margin-top:20px; background:#94a3b8; color:white;" onclick="location.reload()">Làm lại bài</button>
+            <h3 style="text-align: center; margin-bottom: 10px;">📊 BẢNG XẾP HẠNG CẢ LỚP</h3>
+            <div id="rank-list">Đang tải dữ liệu...</div>
+            <button style="margin-top:20px; background:#94a3b8; color:white;" onclick="location.reload()">Làm lại bài thi</button>
         </div>
     </div>
 </div>
 
 <script>
-    <script>
-    // --- 1. CẤU HÌNH FIREBASE CỦA KHÁNH (GIỮ NGUYÊN KEY CỦA BẠN) ---
+    // --- 1. CẤU HÌNH FIREBASE CỦA KHÁNH ---
     const firebaseConfig = {
         apiKey: "AIzaSyA2sLis1g7Dsylip0oWLJDiEBLrfxWd4j4",
         authDomain: "quiz-kma.firebaseapp.com",
@@ -86,7 +85,7 @@
     const questions = [
         {q: "Nhà nước nước CHXHCN Việt Nam là nhà nước pháp quyền XHCN của ai?", a: ["Của giai cấp công nhân", "Của nhân dân, do nhân dân, vì nhân dân", "Của liên minh công - nông - trí thức", "Của Đảng Cộng sản Việt Nam"], c: 1},
         {q: "Nhân dân thực hiện quyền lực nhà nước bằng các hình thức nào?", a: ["Chỉ thông qua dân chủ trực tiếp", "Chỉ thông qua dân chủ đại diện", "Thông qua dân chủ trực tiếp và dân chủ đại diện", "Thông qua các cuộc mít tinh, biểu tình"], c: 2},
-        {q: "Nguyên tắc nào là nguyên tắc tổ chức cơ bản nhất của bộ máy nhà nước VN?", a: ["Phân chia quyền lực", "Tập trung dân chủ", "Đa nguyên, đa đảng", "Tam quyền phân lập"], c: 1},
+        {q: "Nguyên tắc nào là nguyên tắc tổ chức cơ bản nhất của bộ máy nhà nước VN?", a: ["Quyền lực nhà nước là phân chia tuyệt đối", "Tập trung dân chủ", "Đa nguyên, đa đảng", "Tam quyền phân lập"], c: 1},
         {q: "Quyền lực nhà nước ở VN thực hiện theo nguyên tắc nào?", a: ["Độc lập hoàn toàn", "Thống nhất, có phân công, phối hợp, kiểm soát", "Tập trung vào Chính phủ", "Đối lập"], c: 1},
         {q: "Lực lượng lãnh đạo Nhà nước và xã hội Việt Nam là ai?", a: ["Quốc hội", "Mặt trận Tổ quốc", "Đảng Cộng sản Việt Nam", "Quân đội"], c: 2},
         {q: "Cơ quan nào có quyền lập hiến và lập pháp tại Việt Nam?", a: ["Chính phủ", "Quốc hội", "Tòa án", "Chủ tịch nước"], c: 1},
@@ -106,15 +105,19 @@
         {q: "Ai là người Thống lĩnh lực lượng vũ trang nhân dân?", a: ["Tổng Bí thư", "Bộ trưởng Quốc phòng", "Chủ tịch nước", "Thủ tướng"], c: 2}
     ];
 
-    let pName = "", cur = 0, score = 0, canClick = true;
+    // --- 3. LOGIC HOẠT ĐỘNG ---
+    let myName = ""; 
+    let cur = 0; 
+    let score = 0; 
+    let canClick = true;
 
     function start() {
-        pName = document.getElementById('nameInput').value.trim();
-        if(!pName) return alert("Nhập tên đã Khánh ơi!");
+        myName = document.getElementById('nameInput').value.trim();
+        if(!myName) return alert("Khánh ơi, hãy nhập tên để các bạn còn biết mình hạng mấy nhé!");
         document.getElementById('screen-start').style.display = 'none';
         document.getElementById('screen-quiz').style.display = 'block';
         showQ();
-        listenRank();
+        listenRank(); // Lắng nghe sớm để bảng xếp hạng được tải sẵn
     }
 
     function showQ() {
@@ -130,11 +133,19 @@
             b.innerText = String.fromCharCode(65+i) + ". " + t;
             b.onclick = () => {
                 if(!canClick) return; canClick = false;
-                if(i === q.c) { b.classList.add('correct'); score++; }
-                else { b.classList.add('wrong'); div.querySelectorAll('button')[q.c].classList.add('correct'); }
+                const correctIdx = questions[cur].c;
+                if(i === correctIdx) {
+                    b.classList.add('correct');
+                    score++;
+                } else {
+                    b.classList.add('wrong');
+                    div.querySelectorAll('button')[correctIdx].classList.add('correct');
+                }
                 document.getElementById('score-now').innerText = `Đúng: ${score}`;
                 setTimeout(() => {
-                    cur++; if(cur < questions.length) showQ(); else finish();
+                    cur++;
+                    if(cur < questions.length) showQ();
+                    else finish();
                 }, 1200);
             };
             div.appendChild(b);
@@ -145,8 +156,15 @@
         document.getElementById('screen-quiz').style.display = 'none';
         document.getElementById('screen-result').style.display = 'block';
         document.getElementById('final-score').innerText = `${score}/${questions.length}`;
-        // Gửi điểm lên với tên biến 'ts' khớp với Database của Khánh
-        db.ref('leaderboard').push({ name: pName, score: score, ts: Date.now() });
+        
+        // Gửi điểm lên Firebase (Dùng 'ts' để khớp với database của Khánh)
+        db.ref('leaderboard').push({ 
+            name: myName, 
+            score: score, 
+            ts: Date.now() 
+        }).then(() => {
+            console.log("Lưu điểm thành công!");
+        }).catch(e => console.error(e));
     }
 
     function listenRank() {
@@ -156,31 +174,28 @@
                 let val = c.val();
                 if(val && val.name) arr.push(val);
             });
-            
-            // Sắp xếp an toàn: Điểm cao trước, thời gian trước
-            arr.sort((a, b) => (b.score || 0) - (a.score || 0) || (a.ts || 0) - (b.ts || 0));
-            
-            // Lấy 70 bạn
+
+            // SẮP XẾP: Điểm cao lên trước, nếu bằng điểm thì ai làm sớm hơn (ts nhỏ hơn) lên trước
+            arr.sort((a,b) => (b.score || 0) - (a.score || 0) || (a.ts || 0) - (b.ts || 0));
+
+            // Hiện Top 70
             const top70 = arr.slice(0, 70);
-            
+            const total = arr.length;
+
             const html = top70.map((x, i) => `
-                <div class="rank-item" style="${x.name === pName ? 'border: 2px solid var(--p); background: #eff6ff;' : ''}">
+                <div class="rank-item" style="${x.name === myName ? 'border: 2px solid var(--p); background: #eff6ff;' : ''}">
                     <span>${i+1}. ${x.name}</span>
-                    <span style="font-weight:bold; color:var(--p)">${x.score}/20</span>
+                    <span style="font-weight:bold; color:var(--p)">${x.score}/${questions.length}</span>
                 </div>`).join('');
             
             const listDiv = document.getElementById('rank-list');
-            if(listDiv) listDiv.innerHTML = html || "Chưa có ai tham gia.";
-        }, (error) => {
-            console.error("Lỗi Firebase:", error);
-            document.getElementById('rank-list').innerHTML = "Lỗi kết nối Database.";
+            if(listDiv) {
+                const header = `<p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Lớp đã có ${total} bạn tham gia</p>`;
+                listDiv.innerHTML = header + (html || "Chưa có ai tham gia thi đấu.");
+            }
         });
     }
-
-    // Nếu người dùng vào thẳng trang kết quả, vẫn gọi listenRank để hiện bảng
-    if(document.getElementById('screen-result').style.display !== 'none') {
-        listenRank();
-    }
 </script>
+
 </body>
 </html>
