@@ -38,7 +38,7 @@
     <!-- MÀN HÌNH 1: NHẬP TÊN -->
     <div id="screen-start">
         <h1>🏆 KMA QUIZ CHALLENGE</h1>
-        <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Chào Khánh! Nhập tên để bắt đầu đua top với lớp mình nhé.</p>
+        <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Chào bạn! Nhập tên để bắt đầu đua top với lớp mình nhé.</p>
         <input type="text" id="nameInput" placeholder="Nhập Họ tên của bạn..." maxlength="25">
         <button class="btn-blue" onclick="start()">BẮT ĐẦU THI</button>
     </div>
@@ -67,7 +67,7 @@
 </div>
 
 <script>
-    // --- 1. CẤU HÌNH FIREBASE CỦA KHÁNH ---
+    // --- 1. CẤU HÌNH FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyA2sLis1g7Dsylip0oWLJDiEBLrfxWd4j4",
         authDomain: "quiz-kma.firebaseapp.com",
@@ -113,7 +113,7 @@
 
     function start() {
         myName = document.getElementById('nameInput').value.trim();
-        if(!myName) return alert("Khánh ơi, hãy nhập tên để các bạn còn biết mình hạng mấy nhé!");
+        if(!myName) return alert("Hãy nhập tên để các bạn còn biết mình hạng mấy nhé!");
         document.getElementById('screen-start').style.display = 'none';
         document.getElementById('screen-quiz').style.display = 'block';
         showQ();
@@ -157,7 +157,7 @@
         document.getElementById('screen-result').style.display = 'block';
         document.getElementById('final-score').innerText = `${score}/${questions.length}`;
         
-        // Gửi điểm lên Firebase (Dùng 'ts' để khớp với database của Khánh)
+        // Gửi điểm lên Firebase (Dùng 'ts' để khớp với database)
         db.ref('leaderboard').push({ 
             name: myName, 
             score: score, 
