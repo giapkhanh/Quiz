@@ -3,193 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMA Quiz Leaderboard</title>
-    <!-- Firebase SDK (Version compat giúp dễ nhúng) -->
+    <title>KMA Super Quiz Challenge</title>
+    <!-- Firebase SDK (Version Compat để chạy trực tiếp trên HTML) -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        :root { --p: #2563eb; --s: #22c55e; --e: #ef4444; --txt: #1e293b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; margin: 0; display: flex; justify-content: center; padding: 20px; color: var(--txt); }
-        #main-card { background: white; max-width: 500px; width: 100%; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
-        h1 { font-size: 1.4rem; text-align: center; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: 0.2s; }
+        :root { --p: #2563eb; --s: #22c55e; --e: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
+        #app { background: white; max-width: 500px; width: 100%; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.4rem; text-align: center; color: #1e293b; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; margin-bottom: 10px; }
         .btn-blue { background: var(--p); color: white; }
-        .btn-blue:hover { background: #1d4ed8; }
-        
-        .option-btn { background: white; border: 1px solid #e2e8f0; text-align: left; margin-bottom: 10px; }
-        .option-btn:hover { background: #f1f5f9; border-color: var(--p); }
+        .option-btn { background: white; border: 1px solid #e2e8f0; text-align: left; font-weight: normal; }
         .correct { background: #dcfce7 !important; border-color: var(--s) !important; color: #166534; }
         .wrong { background: #fee2e2 !important; border-color: var(--e) !important; color: #991b1b; }
-        
         #leaderboard { margin-top: 25px; border-top: 2px solid #f1f5f9; padding-top: 20px; }
-        .rank-item { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 6px; margin-bottom: 4px; }
-        .rank-item:nth-child(even) { background: #f8fafc; }
-        .rank-item:nth-child(1) { background: #fef3c7; font-weight: bold; } /* Top 1 highlight */
+        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-radius: 8px; margin-bottom: 5px; background: #fff; border: 1px solid #eee; }
+        .rank-item:first-child { background: #fef3c7; border-color: #f59e0b; }
     </style>
 </head>
 <body>
 
-<div id="main-card">
-    <!-- MÀN HÌNH 1: NHẬP TÊN -->
-    <div id="setup-screen">
+<div id="app">
+    <!-- Màn hình nhập tên -->
+    <div id="screen-start">
         <h1>🏆 KMA QUIZ CHALLENGE</h1>
-        <p style="text-align: center; color: #64748b;">Nhập tên để bắt đầu thi đấu</p>
-        <input type="text" id="playerName" placeholder="Tên của bạn..." maxlength="20">
-        <button class="btn-blue" onclick="startQuiz()">Bắt đầu ngay</button>
+        <p style="text-align: center; color: #64748b;">Chào Khánh! Nhập tên để bắt đầu đua top nhé.</p>
+        <input type="text" id="nameInput" placeholder="Họ tên hoặc Nickname..." maxlength="20">
+        <button class="btn-blue" onclick="start()">BẮT ĐẦU THI</button>
     </div>
 
-    <!-- MÀN HÌNH 2: LÀM BÀI -->
-    <div id="quiz-screen" style="display: none;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; color: var(--p); margin-bottom: 10px;">
-            <span id="progress"></span>
-            <span id="live-score">Đúng: 0</span>
+    <!-- Màn hình câu hỏi -->
+    <div id="screen-quiz" style="display:none;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--p); margin-bottom: 15px;">
+            <span id="progress"></span> <span id="score-now">Đúng: 0</span>
         </div>
         <div id="question" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px;"></div>
         <div id="options"></div>
     </div>
 
-    <!-- MÀN HÌNH 3: KẾT QUẢ & BẢNG XẾP HẠNG -->
-    <div id="result-screen" style="display: none; text-align: center;">
-        <h1 id="finish-msg">Lưu kết quả thành công!</h1>
-        <div style="font-size: 1rem;">Bạn đạt được:</div>
-        <div id="final-score" style="font-size: 3rem; font-weight: 800; color: var(--p); margin: 10px 0;"></div>
+    <!-- Màn hình kết quả -->
+    <div id="screen-result" style="display:none;">
+        <h1 style="color: var(--s);">Hoàn thành! 🥳</h1>
+        <p style="text-align: center;">Điểm của bạn:</p>
+        <div id="final-score" style="text-align: center; font-size: 3.5rem; font-weight: 800; color: var(--p); margin: 10px 0;"></div>
         
         <div id="leaderboard">
-            <h3 style="margin-bottom: 15px;">📊 BẢNG XẾP HẠNG LỚP</h3>
-            <div id="rank-list">Đang tải dữ liệu...</div>
-            <button style="margin-top: 20px; background: #64748b; color: white;" onclick="location.reload()">Làm lại bài</button>
+            <h3 style="text-align: center;">📊 BẢNG XẾP HẠNG REALTIME</h3>
+            <div id="rank-list">Đang tải...</div>
+            <button style="margin-top:20px; background:#94a3b8; color:white;" onclick="location.reload()">Làm lại bài</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- 1. CẤU HÌNH FIREBASE (THAY THÔNG TIN CỦA BẠN VÀO ĐÂY) ---
+    // --- CẤU HÌNH FIREBASE CỦA KHÁNH ---
     const firebaseConfig = {
-        apiKey: "AIzaSy...",
-        authDomain: "...",
-        databaseURL: "...", // Đường dẫn database của bạn
-        projectId: "...",
-        storageBucket: "...",
-        messagingSenderId: "...",
-        appId: "..."
+        apiKey: "AIzaSyA2sLis1g7Dsylip0oWLJDiEBLrfxWd4j4",
+        authDomain: "quiz-kma.firebaseapp.com",
+        databaseURL: "https://quiz-kma-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "quiz-kma",
+        storageBucket: "quiz-kma.firebasestorage.app",
+        messagingSenderId: "1034690091115",
+        appId: "1:1034690091115:web:10a56070042a92cd52f92e"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 2. DỮ LIỆU CÂU HỎI ---
+    // DỮ LIỆU 20 CÂU HỎI
     const questions = [
         {q: "Nhà nước nước CHXHCN Việt Nam là nhà nước pháp quyền XHCN của ai?", a: ["Của giai cấp công nhân", "Của nhân dân, do nhân dân, vì nhân dân", "Của liên minh công - nông - trí thức", "Của Đảng Cộng sản Việt Nam"], c: 1},
         {q: "Nhân dân thực hiện quyền lực nhà nước bằng các hình thức nào?", a: ["Chỉ thông qua dân chủ trực tiếp", "Chỉ thông qua dân chủ đại diện", "Thông qua dân chủ trực tiếp và dân chủ đại diện", "Thông qua các cuộc mít tinh, biểu tình"], c: 2},
-        {q: "Nguyên tắc nào là nguyên tắc tổ chức cơ bản nhất của bộ máy nhà nước VN?", a: ["Quyền lực nhà nước là phân chia tuyệt đối", "Tập trung dân chủ", "Đa nguyên, đa đảng", "Tam quyền phân lập"], c: 1},
-        {q: "Quyền lực nhà nước ở VN thực hiện theo nguyên tắc nào giữa các cơ quan?", a: ["Độc lập hoàn toàn", "Thống nhất, có sự phân công, phối hợp và kiểm soát", "Tập trung tuyệt đối vào Chính phủ", "Đối lập"], c: 1},
-        {q: "Lực lượng nào lãnh đạo Nhà nước và xã hội Việt Nam theo Điều 4 Hiến pháp?", a: ["Quốc hội", "Mặt trận Tổ quốc", "Đảng Cộng sản Việt Nam", "Quân đội"], c: 2},
+        {q: "Nguyên tắc nào là nguyên tắc tổ chức cơ bản nhất của bộ máy nhà nước VN?", a: ["Phân chia quyền lực", "Tập trung dân chủ", "Đa nguyên, đa đảng", "Tam quyền phân lập"], c: 1},
+        {q: "Quyền lực nhà nước ở VN thực hiện theo nguyên tắc nào?", a: ["Độc lập hoàn toàn", "Thống nhất, có phân công, phối hợp, kiểm soát", "Tập trung vào Chính phủ", "Đối lập"], c: 1},
+        {q: "Lực lượng lãnh đạo Nhà nước và xã hội Việt Nam là ai?", a: ["Quốc hội", "Mặt trận Tổ quốc", "Đảng Cộng sản Việt Nam", "Quân đội"], c: 2},
         {q: "Cơ quan nào có quyền lập hiến và lập pháp tại Việt Nam?", a: ["Chính phủ", "Quốc hội", "Tòa án", "Chủ tịch nước"], c: 1},
-        {q: "Quốc hội được xác định là cơ quan có tính chất gì?", a: ["Hành chính cao nhất", "Xét xử cao nhất", "Quyền lực nhà nước cao nhất", "Kiểm sát cao nhất"], c: 2},
-        {q: "Cơ quan nào thực hiện quyền hành pháp và là cơ quan hành chính cao nhất?", a: ["Quốc hội", "UBND", "Chính phủ", "Viện kiểm sát"], c: 2},
-        {q: "Người đứng đầu Nhà nước, thay mặt nước về đối nội và đối ngoại là?", a: ["Tổng Bí thư", "Thủ tướng", "Chủ tịch nước", "Chủ tịch Quốc hội"], c: 2},
+        {q: "Quốc hội là cơ quan có tính chất gì?", a: ["Hành chính cao nhất", "Xét xử cao nhất", "Quyền lực nhà nước cao nhất", "Kiểm sát cao nhất"], c: 2},
+        {q: "Cơ quan hành chính nhà nước cao nhất là?", a: ["Quốc hội", "UBND", "Chính phủ", "Viện kiểm sát"], c: 2},
+        {q: "Người đứng đầu Nhà nước về đối nội và đối ngoại là?", a: ["Tổng Bí thư", "Thủ tướng", "Chủ tịch nước", "Chủ tịch Quốc hội"], c: 2},
         {q: "Cơ quan thực hiện quyền tư pháp và xét xử tại Việt Nam là?", a: ["Viện kiểm sát", "Công an", "Tòa án nhân dân", "Hội đồng nhân dân"], c: 2},
-        {q: "Chức năng của Viện kiểm sát nhân dân là gì?", a: ["Xét xử các vụ án hình sự", "Thực hành quyền công tố và kiểm sát hoạt động tư pháp", "Quản lý hành chính", "Ban hành văn bản luật"], c: 1},
-        {q: "Hội đồng nhân dân là cơ quan quyền lực nhà nước ở đâu?", a: ["Ở trung ương", "Ở địa phương", "Trong quân đội", "Trong các đoàn thể"], c: 1},
-        {q: "Cơ quan hành chính ở địa phương, do HĐND cùng cấp bầu ra là gì?", a: ["Tòa án địa phương", "Ủy ban nhân dân", "Công an tỉnh", "Mặt trận Tổ quốc"], c: 1},
-        {q: "Việc bầu cử đại biểu Quốc hội được tiến hành theo nguyên tắc nào?", a: ["Tự nguyện, bình đẳng", "Phổ thông, bình đẳng, trực tiếp và bỏ phiếu kín", "Công khai, dân chủ", "Chỉ định"], c: 1},
+        {q: "Chức năng của Viện kiểm sát nhân dân là gì?", a: ["Xét xử vụ án", "Thực hành quyền công tố và kiểm sát tư pháp", "Quản lý hành chính", "Ban hành luật"], c: 1},
+        {q: "Hội đồng nhân dân là cơ quan quyền lực nhà nước ở đâu?", a: ["Ở trung ương", "Ở địa phương", "Trong quân đội", "Trong đoàn thể"], c: 1},
+        {q: "Cơ quan hành chính ở địa phương là gì?", a: ["Tòa án địa phương", "Ủy ban nhân dân", "Công an tỉnh", "Mặt trận Tổ quốc"], c: 1},
+        {q: "Nguyên tắc bầu cử đại biểu Quốc hội là gì?", a: ["Tự nguyện", "Phổ thông, bình đẳng, trực tiếp, bỏ phiếu kín", "Công khai", "Chỉ định"], c: 1},
         {q: "Nguyên tắc 'Pháp chế XHCN' đòi hỏi điều gì?", a: ["Theo ý lãnh đạo", "Tuân thủ Hiến pháp và pháp luật", "Làm kinh tế", "Theo luật ngành"], c: 1},
-        {q: "Nhiệm kỳ của mỗi khóa Quốc hội Việt Nam là bao nhiêu năm?", a: ["4 năm", "5 năm", "6 năm", "3 năm"], c: 1},
-        {q: "Cơ quan thường trực của Quốc hội có quyền giải thích Hiến pháp và luật là?", a: ["Hội đồng Dân tộc", "Ủy ban Thường vụ Quốc hội", "Chính phủ", "Tòa án tối cao"], c: 1},
-        {q: "Thẩm quyền điều chỉnh địa giới đơn vị hành chính cấp tỉnh thuộc về ai?", a: ["Chính phủ", "Chủ tịch nước", "Quốc hội", "Bộ Nội vụ"], c: 2},
-        {q: "Trong quá trình xét xử, Thẩm phán và Hội thẩm nhân dân tuân theo nguyên tắc?", a: ["Theo chỉ đạo cấp trên", "Độc lập và chỉ tuân theo pháp luật", "Xin ý kiến UBND", "Phối hợp Viện kiểm sát"], c: 1},
-        {q: "Theo Hiến pháp 2013, ai là người Thống lĩnh lực lượng vũ trang nhân dân?", a: ["Tổng Bí thư", "Bộ trưởng Quốc phòng", "Chủ tịch nước", "Thủ tướng"], c: 2}
+        {q: "Nhiệm kỳ mỗi khóa Quốc hội Việt Nam là mấy năm?", a: ["4 năm", "5 năm", "6 năm", "3 năm"], c: 1},
+        {q: "Cơ quan thường trực của Quốc hội giải thích Hiến pháp và luật là?", a: ["Hội đồng Dân tộc", "Ủy ban Thường vụ Quốc hội", "Chính phủ", "Tòa án tối cao"], c: 1},
+        {q: "Thẩm quyền điều chỉnh địa giới cấp tỉnh thuộc về ai?", a: ["Chính phủ", "Chủ tịch nước", "Quốc hội", "Bộ Nội vụ"], c: 2},
+        {q: "Thẩm phán và Hội thẩm nhân dân khi xét xử tuân theo nguyên tắc?", a: ["Theo lệnh cấp trên", "Độc lập và chỉ tuân theo pháp luật", "Xin ý kiến UBND", "Phối hợp Viện kiểm sát"], c: 1},
+        {q: "Ai là người Thống lĩnh lực lượng vũ trang nhân dân?", a: ["Tổng Bí thư", "Bộ trưởng Quốc phòng", "Chủ tịch nước", "Thủ tướng"], c: 2}
     ];
 
-    // --- 3. LOGIC XỬ LÝ ---
-    let playerName = "";
-    let cur = 0;
-    let score = 0;
-    let canClick = true;
+    let pName = "", cur = 0, score = 0, canClick = true;
 
-    function startQuiz() {
-        playerName = document.getElementById('playerName').value.trim();
-        if(!playerName) return alert("Bạn vui lòng nhập tên để bắt đầu nhé!");
-        
-        document.getElementById('setup-screen').style.display = 'none';
-        document.getElementById('quiz-screen').style.display = 'block';
-        loadQuestion();
-        listenRank(); // Bắt đầu lắng nghe BXH từ sớm
+    function start() {
+        pName = document.getElementById('nameInput').value.trim();
+        if(!pName) return alert("Nhập tên đã Khánh ơi!");
+        document.getElementById('screen-start').style.display = 'none';
+        document.getElementById('screen-quiz').style.display = 'block';
+        showQ();
+        listenRank();
     }
 
-    function loadQuestion() {
+    function showQ() {
         canClick = true;
         const q = questions[cur];
-        document.getElementById('progress').innerText = `CÂU ${cur + 1}/${questions.length}`;
+        document.getElementById('progress').innerText = `CÂU ${cur+1}/${questions.length}`;
         document.getElementById('question').innerText = q.q;
-        
-        const opts = document.getElementById('options');
-        opts.innerHTML = '';
-        
-        q.a.forEach((text, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            btn.innerText = String.fromCharCode(65 + i) + ". " + text;
-            btn.onclick = () => checkAns(i, btn);
-            opts.appendChild(btn);
+        const div = document.getElementById('options');
+        div.innerHTML = '';
+        q.a.forEach((t, i) => {
+            const b = document.createElement('button');
+            b.className = 'option-btn';
+            b.innerText = String.fromCharCode(65+i) + ". " + t;
+            b.onclick = () => {
+                if(!canClick) return; canClick = false;
+                if(i === q.c) { b.classList.add('correct'); score++; }
+                else { b.classList.add('wrong'); div.querySelectorAll('button')[q.c].classList.add('correct'); }
+                document.getElementById('score-now').innerText = `Đúng: ${score}`;
+                setTimeout(() => {
+                    cur++; if(cur < questions.length) showQ(); else finish();
+                }, 1200);
+            };
+            div.appendChild(b);
         });
     }
 
-    function checkAns(idx, btn) {
-        if(!canClick) return;
-        canClick = false;
-        
-        const correctIdx = questions[cur].c;
-        if(idx === correctIdx) {
-            btn.classList.add('correct');
-            score++;
-            document.getElementById('live-score').innerText = `Đúng: ${score}`;
-        } else {
-            btn.classList.add('wrong');
-            document.getElementById('options').querySelectorAll('button')[correctIdx].classList.add('correct');
-        }
-
-        setTimeout(() => {
-            cur++;
-            if(cur < questions.length) loadQuestion();
-            else finishQuiz();
-        }, 1200);
-    }
-
-    // --- 4. TỰ ĐỘNG LƯU KHI HẾT CÂU HỎI ---
-    function finishQuiz() {
-        document.getElementById('quiz-screen').style.display = 'none';
-        document.getElementById('result-screen').style.display = 'block';
+    function finish() {
+        document.getElementById('screen-quiz').style.display = 'none';
+        document.getElementById('screen-result').style.display = 'block';
         document.getElementById('final-score').innerText = `${score}/${questions.length}`;
-
-        // Đẩy điểm lên Firebase ngay lập tức
-        db.ref('leaderboard').push({
-            name: playerName,
-            score: score,
-            timestamp: Date.now()
-        }).catch(err => {
-            document.getElementById('finish-msg').innerText = "Lỗi khi lưu điểm!";
-            console.error(err);
-        });
+        db.ref('leaderboard').push({ name: pName, score: score, ts: Date.now() });
     }
 
-    // --- 5. LẮNG NGHE BXH REALTIME ---
     function listenRank() {
         db.ref('leaderboard').orderByChild('score').limitToLast(10).on('value', (snap) => {
-            let data = [];
-            snap.forEach(child => { data.push(child.val()); });
-            data.sort((a, b) => b.score - a.score || b.timestamp - a.timestamp); // Ưu tiên điểm cao, sau đó là thời gian
-
-            const html = data.map((item, i) => `
+            let arr = [];
+            snap.forEach(c => arr.push(c.val()));
+            arr.sort((a,b) => b.score - a.score || b.ts - a.ts);
+            document.getElementById('rank-list').innerHTML = arr.map((x, i) => `
                 <div class="rank-item">
-                    <span>${i+1}. ${item.name}</span>
-                    <span>${item.score}/${questions.length}</span>
-                </div>
-            `).join('');
-            document.getElementById('rank-list').innerHTML = html || "Chưa có ai tham gia.";
+                    <span>${i+1}. ${x.name}</span>
+                    <span style="font-weight:bold; color:var(--p)">${x.score}/${questions.length}</span>
+                </div>`).join('');
         });
     }
 </script>
-
 </body>
 </html>
